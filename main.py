@@ -15,7 +15,7 @@ from util import cycle_index
 
 
 
-def pretrain_gnn(gnn, device, loader, args,writer):
+def train_gnn(gnn, device, loader, args,writer):
     critic = Critic(args['embed_dim'])
     model = DGI(gnn, critic)
     model.to(device)
@@ -97,7 +97,7 @@ def eval(model,device,loader):
 
         return eval_acc_accum/(step+1), eval_loss_accum/(step+1)
 
-def finetune(args,gnn,device,dataset,writer):
+def train_sup(args,gnn,device,dataset,writer):
 
     net = RegressionModel(args['embed_dim'],1,gnn,info_max=args['finetune_contrastive_loss'])
     optm = torch.optim.Adam(net.parameters(),lr=args['reg_lr'])
@@ -222,13 +222,13 @@ def main(args):
 
     if args['pretrain']:
         print(f'Pretraining...')
-        gnn = pretrain_gnn(gnn,device,loader_pretrain,args,writer)
+        gnn = train_gnn(gnn,device,loader_pretrain,args,writer)
         # freeze gnn layers
         for p in gnn.parameters():
             p.requires_grad = False
 
 
-    pr_aoc, roc = finetune(args,gnn,device,finetune_dataset,writer)
+    pr_aoc, roc = train_sup(args,gnn,device,finetune_dataset,writer)
     print(f'Final PR_AOC on eval set: {pr_aoc:.4f}.')
     print(f'Final ROC on eval set: {roc:.4f}.')
     writer.add_scalar('pr-aoc',pr_aoc)
