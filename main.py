@@ -24,7 +24,7 @@ def train_gnn(gnn, device, loader, args,writer):
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'] )
     model.train()
 
-    for epoch in range(args['epochs_pretrain']):
+    for epoch in range(args['epochs_unsup_train']):
         train_acc_accum = 0
         train_loss_accum = 0
         for step, batch in enumerate(loader):
@@ -206,10 +206,10 @@ def main(args):
     
     if not args['use_whole_dataset']:
         pre_train_split = int(t_n*0.7) # assumes we only have labels for 30% of the data
-        loader_pretrain = DataLoader(dataset[:pre_train_split], batch_size=args["batch_size"], shuffle=True, num_workers = 4)
+        loader_unsup_train = DataLoader(dataset[:pre_train_split], batch_size=args["batch_size"], shuffle=True, num_workers = 4)
         finetune_dataset = dataset[pre_train_split:]
     else:
-        loader_pretrain = DataLoader(dataset, batch_size=args["batch_size"], shuffle=True, num_workers = 4)
+        loader_unsup_train = DataLoader(dataset, batch_size=args["batch_size"], shuffle=True, num_workers = 4)
         finetune_dataset = dataset
 
     gnn = GIN(
@@ -220,9 +220,9 @@ def main(args):
 
     writer = SummaryWriter(f'runs/{args["exp_name"]}_{args["seed"]}')
 
-    if args['pretrain']:
-        print(f'Pretraining...')
-        gnn = train_gnn(gnn,device,loader_pretrain,args,writer)
+    if args['unsup_train']:
+        print(f'unsup_training...')
+        gnn = train_gnn(gnn,device,loader_unsup_train,args,writer)
         # freeze gnn layers
         for p in gnn.parameters():
             p.requires_grad = False
@@ -239,51 +239,51 @@ def main(args):
 if __name__ == "__main__":
 
     results = [[] for _ in range (6)]
-    for seed in range(2):
-        # pretrain
+    for seed in [41,42]:
+        # unsup_train
         args = {
             "batch_size": 128,
-            "epochs_pretrain": 50,
+            "epochs_unsup_train": 50,
             "lr": 1e-3,
             'num_layers': 2,
             'embed_dim': 300,
             "reg_lr":1e-3,
             "epochs_finetune": 10,
-            "pretrain" : True,
+            "unsup_train" : True,
             "use_whole_dataset" : True,
-            'exp_name': 'pretrain-whole',
+            'exp_name': 'unsup_train-whole',
             'seed': seed,
             "finetune_contrastive_loss":False,
         }
         results[0].append(main(args))
         args = {
             "batch_size": 128,
-            "epochs_pretrain": 50,
+            "epochs_unsup_train": 50,
             "lr": 1e-3,
             'num_layers': 2,
             'embed_dim': 300,
             "reg_lr":1e-3,
             "epochs_finetune": 10,
-            "pretrain" : True,
+            "unsup_train" : True,
             "use_whole_dataset" : False,
-            'exp_name': 'pretrain-partial',
+            'exp_name': 'unsup_train-partial',
             'seed': seed,
             "finetune_contrastive_loss":False,
         }
         results[1].append(main(args))
 
-        # not pretrain
+        # not unsup_train
         args = {
             "batch_size": 128,
-            "epochs_pretrain": 50,
+            "epochs_unsup_train": 50,
             "lr": 1e-3,
             'num_layers': 2,
             'embed_dim': 300,
             "reg_lr":1e-3,
             "epochs_finetune": 50,
-            "pretrain" : False,
+            "unsup_train" : False,
             "use_whole_dataset" : True,
-            'exp_name': 'no-pretrain-whole',
+            'exp_name': 'no-unsup_train-whole',
             'seed': seed,
             "finetune_contrastive_loss":False,
         }
@@ -291,32 +291,32 @@ if __name__ == "__main__":
 
         args = {
             "batch_size": 128,
-            "epochs_pretrain": 50,
+            "epochs_unsup_train": 50,
             "lr": 1e-3,
             'num_layers': 2,
             'embed_dim': 300,
             "reg_lr":1e-3,
             "epochs_finetune": 50,
-            "pretrain" : False,
+            "unsup_train" : False,
             "use_whole_dataset" : False,
-            'exp_name': 'no-pretrain-partial',
+            'exp_name': 'no-unsup_train-partial',
             'seed': seed,
             "finetune_contrastive_loss":False,
         }
         results[3].append(main(args))
 
-        # not pretrain, combine info max loss
+        # not unsup_train, combine info max loss
         args = {
             "batch_size": 128,
-            "epochs_pretrain": 50,
+            "epochs_unsup_train": 50,
             "lr": 1e-3,
             'num_layers': 2,
             'embed_dim': 300,
             "reg_lr":1e-3,
             "epochs_finetune": 50,
-            "pretrain" : False,
+            "unsup_train" : False,
             "use_whole_dataset" : True,
-            'exp_name': 'no-pretrain-whole-combine-loss',
+            'exp_name': 'no-unsup_train-whole-combine-loss',
             'seed': seed,
             "finetune_contrastive_loss":True,
         }
@@ -324,15 +324,15 @@ if __name__ == "__main__":
 
         args = {
             "batch_size": 128,
-            "epochs_pretrain": 50,
+            "epochs_unsup_train": 50,
             "lr": 1e-3,
             'num_layers': 2,
             'embed_dim': 300,
             "reg_lr":1e-3,
             "epochs_finetune": 50,
-            "pretrain" : False,
+            "unsup_train" : False,
             "use_whole_dataset" : False,
-            'exp_name': 'no-pretrain-partial-combine-loss',
+            'exp_name': 'no-unsup_train-partial-combine-loss',
             'seed': seed,
             "finetune_contrastive_loss":True,
         }
