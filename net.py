@@ -13,7 +13,6 @@ class Critic(nn.Module):
 
     def forward(self, node_ft, graph_ft):
         h = self.linear(graph_ft)
-        # h = torch.matmul(pool, self.weight)
         return torch.sum(node_ft*h, dim = 1)
 
 class DGI(nn.Module):
